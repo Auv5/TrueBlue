@@ -133,13 +133,31 @@ class Team:
         self.elimcount = 0
         self.elimtotal = 0
 
+        self.qualscount = 0
+        self.qualstotal = 0
+
     def __str__(self):
         return self.number + ': ' + self.name
 
-    def average(self):
+    def elimaverage(self):
         if self.elimcount:
             return self.elimtotal / self.elimcount
         else:
+            return 0
+
+    def qualsaverage(self):
+        if self.qualscount:
+            return self.qualstotal / self.qualscount
+        else:
+            return 0
+
+    def average(self):
+        if self.qualscount and not self.elimcount:
+            return self.qualsaverage()
+        elif self.qualscount and self.elimcount:
+            return (self.qualstotal + self.elimtotal) / (self.qualscount + self.elimcount)
+        else:
+            # No data. Team didn't play last year.
             return 0
 
     def attended(self, regional):
@@ -166,11 +184,11 @@ def make_teams(regionals):
             else:
                 teams[team_number].regionals.append(r['name'])
 
-            counter += 1
-            percentage = int((counter / total) * 100)
-            if (percentage - prevpercent) >= 5:
-                print(str(percentage) + '%')
-                prevpercent = percentage
+        counter += 1
+        percentage = int((counter / total) * 100)
+        if (percentage - prevpercent) >= 5:
+            print(str(percentage) + '%')
+            prevpercent = percentage
 
     return teams
 
@@ -213,8 +231,7 @@ def flatten_matches(regionals):
     flattened_matches = []
     for r in regionals:
         for s in r['matches']:
-            if 'qm' in s:
-                flattened_matches.append(s)
+            flattened_matches.append(s)
     return flattened_matches
 
 
@@ -240,12 +257,20 @@ def correlate_matches(teams, matches):
             b = int(b.replace("frc", ""))
 
             if r in teams:
-                teams[r].elimtotal += red_score
-                teams[r].elimcount += 1
+                if mjson['competition_level'] != 'Quals':
+                    teams[r].elimtotal += red_score
+                    teams[r].elimcount += 1
+                else:
+                    teams[r].qualstotal += red_score
+                    teams[r].qualscount += 1
 
             if b in teams:
-                teams[b].elimtotal += blue_score
-                teams[b].elimcount += 1
+                if mjson['competition_level'] != 'Quals':
+                    teams[b].elimtotal += blue_score
+                    teams[b].elimcount += 1
+                else:
+                    teams[b].qualstotal += blue_score
+                    teams[b].qualscount += 1
 
         counter += 1
 
@@ -327,14 +352,16 @@ def main():
 
     correlate_matches(att_teams, matches)
 
-    mk_csv(['Team Number', 'Name', 'Website', 'Location', 'Regionals', year + ' Elimination Average'],
+    mk_csv(['Team Number', 'Name', year + ' Elimination Average', year + ' Quals Average', year + ' Total Average', 'Website', 'Location', 'Regionals in ' + str(current_compyear)],
            [lambda self: self.number,
             lambda self: self.name,
+            Team.elimaverage,
+            Team.qualsaverage,
+            Team.average,
             lambda self: self.website,
             lambda self: self.location,
             lambda self: ','.join(
-                self.regionals),
-            Team.average],
+                self.regionals)],
            vinput('Enter output filename', lambda s: '.' in s, 'output.csv'), att_teams.values())
 
 
