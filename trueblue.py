@@ -6,6 +6,8 @@ from datetime import date
 
 VERBOSE = False
 
+DEF_HEADERS = {'User-Agent': 'TrueBlue bluealliance Scraper',
+        'X-TBA-App-Id': 'frc2994:scouting:v1'}
 
 def vinput(prompt, validator, default=None):
     if default:
@@ -34,7 +36,7 @@ def is_integer(s, silence=False):
 
 def download_regionals(year):
     conn = HTTPConnection('www.thebluealliance.com')
-    conn.request('GET', '/api/v1/events/list?year=' + year)
+    conn.request('GET', '/api/v1/events/list?year=' + year, headers=DEF_HEADERS)
 
     r = conn.getresponse()
     answer = r.read().decode('utf-8')
@@ -43,7 +45,7 @@ def download_regionals(year):
 
 def download_match(m, quiet=False):
     conn = HTTPConnection('www.thebluealliance.com')
-    conn.request('GET', '/api/v1/match/details?match=' + m)
+    conn.request('GET', '/api/v1/match/details?match=' + m, headers=DEF_HEADERS)
 
     r = conn.getresponse()
     answer = r.read().decode('utf-8')
@@ -99,7 +101,7 @@ def download_regional(key, quiet=False):
 
     conn = HTTPConnection('www.thebluealliance.com')
 
-    conn.request('GET', '/api/v1/event/details?event=' + key)
+    conn.request('GET', '/api/v1/event/details?event=' + key, headers=DEF_HEADERS)
 
     r = conn.getresponse()
 
@@ -115,7 +117,7 @@ def download_teams(r, quiet=False):
         print('Downloading team details...')
 
     conn = HTTPConnection('www.thebluealliance.com')
-    conn.request('GET', '/api/v1/teams/show?teams=' + to_api)
+    conn.request('GET', '/api/v1/teams/show?teams=' + to_api, headers=DEF_HEADERS)
     r = conn.getresponse()
 
     answer = r.read().decode('utf-8')
